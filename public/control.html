@@ -22,7 +22,7 @@
   .live { color:#ff5a5a; font-weight:700; }
   .pv { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; border-radius:12px;
         border:2px solid var(--line);
-        background:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxNjAgOTAnIHByZXNlcnZlQXNwZWN0UmF0aW89J3hNaWRZTWF4IG1lZXQnPjxjaXJjbGUgY3g9JzgwJyBjeT0nMzMnIHI9JzEzJyBmaWxsPSd3aGl0ZScgZmlsbC1vcGFjaXR5PScuMTYnLz48cGF0aCBkPSdNNDIgOTBjMC0yMSAxNy0zMSAzOC0zMXMzOCAxMCAzOCAzMXonIGZpbGw9J3doaXRlJyBmaWxsLW9wYWNpdHk9Jy4xNicvPjwvc3ZnPg==') center/contain no-repeat, radial-gradient(ellipse at 50% 40%,#3b4468 0%,#151a2e 80%); }
+        background:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIwIDEwODAnPjxjaXJjbGUgY3g9Jzk0OCcgY3k9JzI5Micgcj0nMTUwJyBmaWxsPSd3aGl0ZScgZmlsbC1vcGFjaXR5PScuMTYnLz48cGF0aCBkPSdNNTAwIDEwODAgTDUzMCA4MDAgQzU2MCA2MDAgNzAwIDQ3MCA4NjAgNDQwIEwxMDQwIDQ0MCBDMTIwMCA0NzAgMTMwMCA2MDAgMTMxNSA4MDAgTDEzNDUgMTA4MCBaJyBmaWxsPSd3aGl0ZScgZmlsbC1vcGFjaXR5PScuMTYnLz48L3N2Zz4=') center/100% 100% no-repeat, radial-gradient(ellipse at 50% 40%,#3b4468 0%,#151a2e 80%); }
   .pv iframe { position:absolute; left:0; top:0; width:1920px; height:1080px; border:0;
                transform-origin:0 0; background:transparent; pointer-events:none; }
   .hint { font-size:13px; color:var(--mut); margin:8px 0 0; }
@@ -76,7 +76,8 @@
   <section>
     <div class="pv-label"><span class="live">● Vista previa</span><span>Así se ve en vMix</span></div>
     <div class="pv" id="pv"><iframe id="pvf" src="/display.html" scrolling="no" tabindex="-1"></iframe></div>
-    <p class="hint">El fondo gris y la silueta solo simulan tu cámara. El centro queda libre para el invitado.</p>
+    <p class="hint">El fondo gris y la silueta solo simulan tu cámara (plano medio). El centro queda libre para el invitado.</p>
+    <label class="chk" style="margin:0 0 4px"><input type="checkbox" id="gui" onchange="$('pvf').src = this.checked ? '/display.html?guides' : '/display.html'"> Mostrar guías de ESPN (ESPN VIVO, hashtag y tercio inferior)</label>
     <div class="card" id="bgbox" style="margin-top:14px">
       <div class="label">Fondo de la pantalla (para chroma)</div>
       <div class="grid">

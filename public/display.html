@@ -10,12 +10,14 @@
   :root {
     /* Colores de FSHOW */
     --navy: #070745; --blue: #0319d6; --blue-d: #050f84; --red: #ff2925; --green: #12a150;
-    --sk: skewX(-7deg); --k: 1.1;
+    --sk: skewX(-7deg); --k: 0.95;
   }
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; color: #fff;
                font-family: "Barlow Condensed", "Arial Narrow", Impact, sans-serif; font-weight: 800; }
+
   /* Lienzo fijo de 1920x1080 que se escala para caber en cualquier ventana (en vMix a 1920x1080 la escala es 1) */
-  #root { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  #root { position: absolute; inset: 0; }
   .wrap { position: absolute; inset: 0; }
 
   .plate { transform: var(--sk); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
@@ -24,18 +26,19 @@
   @keyframes enter { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
   @keyframes pop   { from { opacity: 0; transform: var(--sk) translateX(var(--dx, -80px)); } to { opacity: 1; transform: var(--sk); } }
 
-  /* Encabezado arriba a la izquierda (puntos junto al título). La esquina superior derecha queda libre para el logo ESPN */
-  .hdr { position: absolute; left: 90px; top: 54px; display: flex; align-items: stretch; height: 96px; }
-  .logo { height: 96px; width: auto; margin-right: 18px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.4)); }
-  .title { display: flex; align-items: center; padding: 0 30px; background: var(--navy);
-           border-left: 10px solid var(--red); font-size: 48px; letter-spacing: 1px;
+  /* Encabezado arriba a la izquierda; puntos y reloj en una segunda fila debajo.
+     La esquina superior derecha (ESPN VIVO) y la inferior derecha (hashtag) quedan libres */
+  .hdr { position: absolute; left: 90px; top: 54px; display: flex; align-items: stretch; height: 92px; }
+  .logo { height: 92px; width: auto; margin-right: 18px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.4)); }
+  .title { display: flex; align-items: center; padding: 0 28px; background: var(--navy);
+           border-left: 10px solid var(--red); font-size: 46px; letter-spacing: 1px;
            text-transform: uppercase; white-space: nowrap; }
-  .pts { display: flex; align-items: center; margin-left: 10px; padding: 0 28px; background: var(--red);
-         font-size: 50px; white-space: nowrap; }
+  .chips { position: absolute; left: 100px; top: 162px; display: flex; gap: 10px; height: 70px; }
+  .pts { display: flex; align-items: center; padding: 0 26px; background: var(--red); font-size: 46px; white-space: nowrap; }
 
   /* Reloj: blanco con números rojos parpadeando en los últimos 10 s */
-  .clock { display: flex; align-items: center; justify-content: center; min-width: 170px; margin-left: 10px; padding: 0 26px;
-           background: #fff; color: var(--navy); font-size: 60px; white-space: nowrap; }
+  .clock { display: flex; align-items: center; justify-content: center; min-width: 150px; padding: 0 24px;
+           background: #fff; color: var(--navy); font-size: 50px; white-space: nowrap; }
   .clock.low { color: var(--red); animation: blink 1s steps(1, end) infinite; }
   .clock.end { color: var(--red); animation: blink .5s steps(1, end) infinite; }
   @keyframes blink { 50% { opacity: .45; } }
@@ -46,19 +49,19 @@
          background: linear-gradient(90deg, var(--blue), var(--blue-d)); }
   .row .n { align-self: stretch; width: calc(72px * var(--k)); flex: none; display: flex; align-items: center; justify-content: center;
             background: var(--red); font-size: calc(50px * var(--k)); }
-  .row .t { padding: 6px 22px 8px 20px; font-size: calc(40px * var(--k)); font-weight: 700; line-height: 1.05; letter-spacing: .2px; }
+  .row .t { padding: 6px 20px 8px 18px; font-size: calc(40px * var(--k)); font-weight: 700; line-height: 1.05; letter-spacing: .2px; }
   .row.hid { background: rgba(7,7,69,.84); }
   .row.hid .n { background: rgba(255,255,255,.2); }
   .row.hid .t { opacity: .45; }
 
   /* Tercio inferior (respuesta, afirmación, título del ranking) */
   .lower { position: absolute; left: 0; right: 0; bottom: 60px; display: flex; justify-content: center; }
-  .answer { width: 1100px; padding: 2px 24px 8px; background: #fff; color: var(--navy); text-align: center;
-            border-left: 18px solid var(--red); font-size: 88px; text-transform: uppercase; }
-  .score { position: absolute; left: 90px; bottom: 64px; }
-  .score div { padding: 4px 30px; background: var(--navy); border-right: 12px solid var(--red); font-size: 40px; }
+  .answer { width: 1000px; padding: 2px 24px 8px; background: #fff; color: var(--navy); text-align: center;
+            border-left: 18px solid var(--red); font-size: 84px; text-transform: uppercase; }
+  .score-chip { display: flex; align-items: center; padding: 0 24px; background: var(--navy);
+                border-right: 12px solid var(--red); font-size: 44px; white-space: nowrap; }
 
-  .stmt { width: 1500px; min-height: 140px; padding: 22px 44px; display: flex; align-items: center;
+  .stmt { width: 1400px; min-height: 140px; padding: 22px 44px; display: flex; align-items: center;
           background: linear-gradient(90deg, var(--blue), var(--blue-d)); font-size: 54px; font-weight: 700; line-height: 1.1; }
   .stmt.dim { width: 260px; min-height: 100px; justify-content: center; background: rgba(7,7,69,.84); font-size: 70px; }
   .mid-right { position: absolute; right: 90px; top: 0; bottom: 0; display: flex; align-items: center; }
@@ -72,27 +75,44 @@
   body.chroma .logo { filter: none; }
   body.chroma .row.hid, body.chroma .stmt.dim { background: #1f1f55; }
   body.chroma .clock.low, body.chroma .clock.end { animation: none; background: var(--red); color: #fff; }
-
   /* Con chroma verde, el cartel VERDADERO pasa a azul para que no se borre */
   body.bg-green .verdict:not(.f) { background: var(--blue); }
 
-  /* Solo con ?preview: fondo gris con silueta para ver el diseño en un navegador normal */
-  body.preview { background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxNjAgOTAnIHByZXNlcnZlQXNwZWN0UmF0aW89J3hNaWRZTWF4IG1lZXQnPjxjaXJjbGUgY3g9JzgwJyBjeT0nMzMnIHI9JzEzJyBmaWxsPSd3aGl0ZScgZmlsbC1vcGFjaXR5PScuMTYnLz48cGF0aCBkPSdNNDIgOTBjMC0yMSAxNy0zMSAzOC0zMXMzOCAxMCAzOCAzMXonIGZpbGw9J3doaXRlJyBmaWxsLW9wYWNpdHk9Jy4xNicvPjwvc3ZnPg==') center/contain no-repeat,
-                 radial-gradient(ellipse at 50% 40%, #3b4468 0%, #151a2e 80%); }
+  /* Solo con ?preview: fondo gris con la silueta de un invitado en plano medio */
+  body.preview { background: #10142a; }
+  body.preview #stage { background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIwIDEwODAnPjxjaXJjbGUgY3g9Jzk0OCcgY3k9JzI5Micgcj0nMTUwJyBmaWxsPSd3aGl0ZScgZmlsbC1vcGFjaXR5PScuMTYnLz48cGF0aCBkPSdNNTAwIDEwODAgTDUzMCA4MDAgQzU2MCA2MDAgNzAwIDQ3MCA4NjAgNDQwIEwxMDQwIDQ0MCBDMTIwMCA0NzAgMTMwMCA2MDAgMTMxNSA4MDAgTDEzNDUgMTA4MCBaJyBmaWxsPSd3aGl0ZScgZmlsbC1vcGFjaXR5PScuMTYnLz48L3N2Zz4=') center/100% 100% no-repeat,
+                        radial-gradient(ellipse at 50% 40%, #3b4468 0%, #151a2e 80%); }
+
+  /* Solo con ?guides: zonas de los gráficos fijos de ESPN */
+  #guides { display: none; position: absolute; inset: 0; pointer-events: none; }
+  body.guides #guides { display: block; }
+  #guides div { position: absolute; box-sizing: border-box; border: 3px dashed #ffe600; background: rgba(255,230,0,.13);
+                color: #ffe600; font: 800 26px Arial, sans-serif; padding: 4px 10px; }
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="stage">
+  <div id="guides">
+    <div style="left:0;top:790px;width:1920px;height:200px">TERCIO INFERIOR ESPN</div>
+    <div style="left:1660px;top:50px;width:180px;height:95px">ESPN VIVO</div>
+    <div style="left:1460px;top:790px;width:310px;height:60px">#HASHTAG</div>
+  </div>
+  <div id="root"></div>
+</div>
 <script>
-// Geometría del "rosco" (pantalla de 1920x1080). Ajusta RX para ensanchar o angostar el centro libre.
-// K = tamaño de los ítems (1 = pequeño, 1.2 = grande). W = ancho de cada ítem.
-// RX = distancia de los ítems al centro (más chico = más cerca del invitado). RY = altura del arco.
-const CFG = { CX: 960, CY: 548, RX: 440, RY: 380, W: 430, K: 1.05 };
+// Geometría de los ítems alrededor del invitado (lienzo de 1920x1080).
+// K = tamaño (1 = más chico, 1.2 = más grande) · W = ancho de cada ítem · MARGIN = margen de seguridad de TV
+// Y0..Y1 = franja vertical que ocupan · BOW = cuánto se acercan al centro los ítems de arriba (siguen la cabeza y hombros)
+const CFG = { W: 380, K: 0.95, MARGIN: 90, Y0: 250, Y1: 720, BOW: 230 };
 document.documentElement.style.setProperty('--k', CFG.K);
 
+const stage = document.getElementById('stage');
 const root = document.getElementById('root');
-const PREVIEW = new URLSearchParams(location.search).has('preview');
+const Q = new URLSearchParams(location.search);
+const PREVIEW = Q.has('preview');
 if (PREVIEW) document.body.classList.add('preview');
+if (Q.has('guides')) document.body.classList.add('guides');
+
 // Fondo para chroma: none = transparente, green = verde croma, magenta
 function applyBg(bg) {
   const color = bg === 'green' ? '#00b140' : bg === 'magenta' ? '#ff00ff' : '';
@@ -103,12 +123,12 @@ function applyBg(bg) {
 }
 function fit() {
   const s = Math.min(innerWidth / 1920, innerHeight / 1080);
-  root.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+  stage.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
 }
 addEventListener('resize', fit); fit();
+
 const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
-let prev = null;
-let prevSig = null;
+let prev = null, prevSig = null;
 ws.onmessage = e => {
   const s = JSON.parse(e.data);
   const { timer, ...rest } = s;
@@ -127,17 +147,21 @@ function updateClock(t) {
   const el = root.querySelector('.clock');
   if (el) { el.textContent = clockTxt(t); el.className = 'plate clock ' + clockCls(t); }
 }
-const hdr = (title, pts, t) => `<div class="hdr"><img class="logo" src="/logo.png" alt=""><div class="plate title">${title}</div>${pts ? `<div class="plate pts">${pts}</div>` : ''}${clockHtml(t)}</div>`;
+const hdr = (title, pts, t, extra = '') => {
+  const chips = (pts ? `<div class="plate pts">${pts}</div>` : '') + clockHtml(t) + extra;
+  return `<div class="hdr"><img class="logo" src="/logo.png" alt=""><div class="plate title">${title}</div></div>` +
+    (chips ? `<div class="chips">${chips}</div>` : '');
+};
 
-// Posición del ítem i de n: mitad a la izquierda y mitad a la derecha, en arco alrededor del centro
+// Posición del ítem i de n: mitad a la izquierda y mitad a la derecha, en columnas pegadas al margen.
+// Los de arriba se acercan al centro (la cabeza es angosta) y los de abajo se alejan (los hombros son anchos).
 function place(n, i) {
   const nl = Math.ceil(n / 2), left = i < nl;
-  const count = left ? nl : n - nl, idx = left ? i : i - nl, dir = left ? -1 : 1;
-  const span = count >= 4 ? 46 : count === 3 ? 40 : count === 2 ? 24 : 0;
-  const t = count === 1 ? 0 : (idx / (count - 1)) * 2 - 1;
-  const a = t * span * Math.PI / 180;
-  const inner = CFG.CX + dir * CFG.RX * Math.cos(a);
-  return { x: dir < 0 ? inner - CFG.W : inner, y: CFG.CY + CFG.RY * Math.sin(a), dir };
+  const count = left ? nl : n - nl, idx = left ? i : i - nl;
+  const y = CFG.Y0 + (CFG.Y1 - CFG.Y0) * (idx + 0.5) / count;
+  const shift = CFG.BOW * Math.min(1, Math.max(0, (CFG.Y1 - y) / (CFG.Y1 - CFG.Y0)));
+  const x = left ? CFG.MARGIN + shift : 1920 - CFG.MARGIN - CFG.W - shift;
+  return { x, y, dir: left ? -1 : 1 };
 }
 function item(n, i, shown, isNew, text) {
   const p = place(n, i);
@@ -162,8 +186,8 @@ function adivina(s) {
     return item(n, i, shown, shown && P && i >= P.revealed, p);
   }).join('');
   const ans = A.solved ? `<div class="lower"><div class="plate answer${P && !P.solved ? ' pop' : ''}" style="--dx:0px">${esc(q.respuesta)}</div></div>` : '';
-  return hdr('¿Quién es el jugador?', A.solved ? '' : `${pts} PTS`, s.timer) +
-    items + ans + `<div class="score"><div class="plate">Puntaje ${A.score}</div></div>`;
+  return hdr('¿Quién es el jugador?', A.solved ? '' : `${pts} PTS`, s.timer,
+             `<div class="plate score-chip">Puntaje ${A.score}</div>`) + items + ans;
 }
 
 function vf(s) {
@@ -174,8 +198,7 @@ function vf(s) {
     : `<div class="plate stmt dim">?</div>`;
   const verdict = V.reveal
     ? `<div class="mid-right"><div class="plate verdict ${q.verdad ? '' : 'f'}${P && !P.reveal ? ' pop' : ''}" style="--dx:80px">${q.verdad ? 'VERDADERO' : 'FALSO'}</div></div>` : '';
-  return hdr('Verdadero o falso', `${V.score} / ${V.answered}`, s.timer) +
-    verdict + `<div class="lower">${stmt}</div>`;
+  return hdr('Verdadero o falso', `${V.score} / ${V.answered}`, s.timer) + verdict + `<div class="lower">${stmt}</div>`;
 }
 
 function top5(s) {

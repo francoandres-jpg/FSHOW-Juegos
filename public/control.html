@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FSHOW Juegos · Control</title>
+<style>
+  :root { --bg:#050a2e; --panel:#0b1245; --line:#1a2680; --txt:#e8eefc; --mut:#8da0c8;
+          --yellow:#facc15; --green:#16a34a; --red:#dc2626; --blue:#0319d6; --amber:#f59e0b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font:16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  #tabs { display:flex; gap:8px; padding:12px 16px; flex-wrap:wrap; border-bottom:1px solid var(--line);
+          position:sticky; top:0; background:var(--bg); z-index:5; }
+  .tab { flex:1; min-width:140px; padding:14px; border-radius:12px; border:2px solid var(--line);
+         background:var(--panel); color:var(--txt); font-weight:700; font-size:16px; cursor:pointer; }
+  .tab.on { background:var(--red); color:#fff; border-color:var(--red); }
+  main { display:grid; grid-template-columns:minmax(320px,560px) 1fr; gap:20px; padding:16px; align-items:start; }
+  @media (max-width: 900px) { main { grid-template-columns:1fr; } }
+
+  .pv-label { display:flex; justify-content:space-between; font-size:14px; color:var(--mut); margin-bottom:8px; }
+  .live { color:#ff5a5a; font-weight:700; }
+  .pv { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; border-radius:12px;
+        border:2px solid var(--line);
+        background:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxNjAgOTAnIHByZXNlcnZlQXNwZWN0UmF0aW89J3hNaWRZTWF4IG1lZXQnPjxjaXJjbGUgY3g9JzgwJyBjeT0nMzMnIHI9JzEzJyBmaWxsPSd3aGl0ZScgZmlsbC1vcGFjaXR5PScuMTYnLz48cGF0aCBkPSdNNDIgOTBjMC0yMSAxNy0zMSAzOC0zMXMzOCAxMCAzOCAzMXonIGZpbGw9J3doaXRlJyBmaWxsLW9wYWNpdHk9Jy4xNicvPjwvc3ZnPg==') center/contain no-repeat, radial-gradient(ellipse at 50% 40%,#3b4468 0%,#151a2e 80%); }
+  .pv iframe { position:absolute; left:0; top:0; width:1920px; height:1080px; border:0;
+               transform-origin:0 0; background:transparent; pointer-events:none; }
+  .hint { font-size:13px; color:var(--mut); margin:8px 0 0; }
+
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; }
+  .label { color:var(--mut); font-size:13px; margin-bottom:6px; }
+  .answer { font-size:36px; font-weight:800; color:#4ade80; }
+  .stmt { font-size:26px; font-weight:700; line-height:1.3; }
+  .truth { display:inline-block; margin-top:12px; padding:6px 14px; border-radius:30px; font-weight:800; }
+  .truth.t { background:var(--green); } .truth.f { background:var(--red); }
+  .clues { list-style:none; margin:0; padding:0; }
+  .clues li { display:flex; align-items:center; gap:12px; padding:8px 0; font-size:18px; color:#7b8bb0; }
+  .clues li span { width:30px; height:30px; border-radius:50%; background:#1e2a4d; display:grid; place-items:center; font-size:14px; flex:none; }
+  .clues li.shown { color:#fff; }
+  .clues li.shown span { background:var(--green); }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 12px; }
+  .pill { background:var(--panel); border:1px solid var(--line); padding:6px 14px; border-radius:30px; font-size:15px; font-weight:600; }
+  .pill.ok { background:var(--green); border-color:var(--green); }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-bottom:10px; }
+  .btn { padding:16px; border:0; border-radius:12px; font-weight:700; font-size:17px; color:#fff;
+         background:#2a3858; cursor:pointer; }
+  .btn:active { transform:scale(.97); }
+  .btn.big { font-size:21px; padding:22px 16px; }
+  .btn.primary { background:var(--blue); } .btn.ok { background:var(--green); }
+  .btn.no { background:var(--red); } .btn.ps { background:var(--amber); color:#111; }
+  .list { margin-bottom:10px; }
+  .btn.row { display:flex; align-items:center; gap:14px; text-align:left; width:100%; margin-bottom:8px; font-size:20px; padding:14px 16px; }
+  .btn.row .n { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.18); display:grid; place-items:center; flex:none; }
+  .btn.row .st { margin-left:auto; font-size:14px; opacity:.85; font-weight:600; }
+  .empty { text-align:center; padding:40px 16px; color:var(--mut); font-size:18px; }
+  .foot { margin-top:18px; }
+  .ghost { background:none; border:1px solid var(--line); color:var(--mut); padding:10px 16px; border-radius:10px; cursor:pointer; }
+  .tbig { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  #tclock { font-size:72px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
+  .setrow { display:flex; gap:8px; margin:6px 0 10px; }
+  .setrow input { flex:1; min-width:0; font-size:22px; padding:12px 14px; border-radius:10px; border:2px solid var(--line);
+                  background:var(--bg); color:var(--txt); }
+  .chk { display:flex; align-items:center; gap:10px; font-size:15px; color:var(--mut); margin-top:6px; cursor:pointer; }
+  .chk input { width:20px; height:20px; }
+  .msg { font-size:14px; margin-top:10px; color:var(--mut); }
+  .off { display:none; position:fixed; left:0; right:0; bottom:0; background:var(--red); padding:12px; text-align:center; font-weight:700; }
+</style>
+</head>
+<body>
+<div id="tabs"></div>
+<main>
+  <section>
+    <div class="pv-label"><span class="live">● Vista previa</span><span>Así se ve en vMix</span></div>
+    <div class="pv" id="pv"><iframe id="pvf" src="/display.html" scrolling="no" tabindex="-1"></iframe></div>
+    <p class="hint">El fondo gris y la silueta solo simulan tu cámara. El centro queda libre para el invitado.</p>
+    <div class="card" id="timerbox" style="margin-top:14px">
+      <div class="label">Reloj · cuenta regresiva</div>
+      <div class="tbig"><span id="tclock">1:00</span><span class="pill" id="tstate">Detenido</span></div>
+      <div class="grid">
+        <button class="btn ok" onclick='send({"type":"timer_start"})'>▶ Iniciar</button>
+        <button class="btn ps" onclick='send({"type":"timer_pause"})'>⏸ Pausar</button>
+        <button class="btn" onclick='send({"type":"timer_reset"})'>⟲ Reiniciar</button>
+      </div>
+      <div class="label">Duración (segundos o m:ss)</div>
+      <div class="setrow">
+        <input id="tinput" inputmode="text" placeholder="60 o 1:30" value="1:00" onkeydown="if(event.key==='Enter')applyTime()">
+        <button class="btn primary" onclick="applyTime()">Aplicar</button>
+      </div>
+      <div class="grid">
+        <button class="btn" onclick="preset(30)">0:30</button>
+        <button class="btn" onclick="preset(60)">1:00</button>
+        <button class="btn" onclick="preset(90)">1:30</button>
+        <button class="btn" onclick="preset(120)">2:00</button>
+      </div>
+      <div class="grid">
+        <button class="btn" onclick='send({"type":"timer_add","value":-10})'>− 10 s</button>
+        <button class="btn" onclick='send({"type":"timer_add","value":10})'>+ 10 s</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="tshow" checked onchange='send({"type":"timer_show","value":this.checked})'> Mostrar el reloj en pantalla</label>
+    </div>
+  </section>
+  <section id="panel"></section>
+</main>
+<div id="off" class="off">Sin conexión con el servidor. Reintentando…</div>
+
+<script>
+// Clave de acceso: abre el control como /control.html?key=TU_CLAVE (solo si el servidor tiene CONTROL_KEY)
+const KEY = new URLSearchParams(location.search).get('key') || '';
+const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/?key=${encodeURIComponent(KEY)}`);
+const send = o => ws.send(JSON.stringify(o));
+const names = { adivina: 'Adivina el jugador', vf: 'Verdadero o falso', top5: 'Top 5', none: 'Pantalla limpia' };
+const btn = (cls, label, o) => `<button class="btn ${cls}" onclick='send(${JSON.stringify(o)})'>${label}</button>`;
+const nav = (a, b) => btn('', '◀ Anterior', { type: a, dir: -1 }) + btn(b || '', 'Siguiente ▶', { type: a, dir: 1 });
+const off = document.getElementById('off');
+
+ws.onopen = () => { off.style.display = 'none'; };
+ws.onclose = () => { off.style.display = 'block'; setTimeout(() => location.reload(), 2000); };
+// --- Reloj (se actualiza aparte para no redibujar los botones cada segundo) ---
+const fmt = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+const $ = id => document.getElementById(id);
+let timerInit = false, prevSig = null;
+function parseTime(txt) {
+  txt = String(txt).trim();
+  let m = txt.match(/^(\d+):(\d{1,2})$/);
+  if (m) return +m[1] * 60 + +m[2];
+  m = txt.match(/^\d+$/);
+  return m ? +txt : 0;
+}
+function applyTime() {
+  const v = parseTime($('tinput').value);
+  if (v < 1) { alert('Escribe segundos (ej. 90) o minutos:segundos (ej. 1:30)'); return; }
+  send({ type: 'timer_set', value: v });
+}
+function preset(v) { $('tinput').value = fmt(v); send({ type: 'timer_set', value: v }); }
+function updateTimer(t) {
+  $('tclock').textContent = fmt(Math.ceil(t.remaining));
+  const st = $('tstate');
+  st.textContent = t.running ? 'En marcha' : t.remaining <= 0 ? 'Terminó' : 'Detenido';
+  st.className = 'pill' + (t.running ? ' ok' : '');
+  $('tclock').style.color = t.remaining <= 0 || (t.running && t.remaining <= 10) ? '#ff5a5a' : '';
+  $('tshow').checked = t.show;
+  if (!timerInit) { $('tinput').value = fmt(t.total); timerInit = true; }
+}
+ws.onmessage = e => {
+  const s = JSON.parse(e.data);
+  const { timer, ...rest } = s;
+  updateTimer(timer);
+  const sig = JSON.stringify(rest);
+  if (sig === prevSig) return; // solo cambió el reloj: no se redibuja el panel
+  prevSig = sig; draw(s);
+};
+
+// Escala la vista previa (1920x1080) al ancho disponible
+const pv = document.getElementById('pv'), pvf = document.getElementById('pvf');
+const fit = () => { pvf.style.transform = `scale(${pv.clientWidth / 1920})`; };
+new ResizeObserver(fit).observe(pv); fit();
+
+function resetAll() { if (confirm('¿Reiniciar puntajes y pantalla?')) send({ type: 'reset' }); }
+
+function draw(s) {
+  document.getElementById('tabs').innerHTML = Object.keys(names).map(g =>
+    `<button class="tab ${s.game === g ? 'on' : ''}" onclick='send({"type":"game","value":"${g}"})'>${names[g]}</button>`).join('');
+  const c = s.content;
+  let h = s.readOnly ? `<div class="card" style="background:var(--red);border-color:var(--red)"><b>Solo lectura.</b> La clave es incorrecta o falta. Abre esta página como <code>/control.html?key=TU_CLAVE</code>.</div>` : '';
+
+  if (s.game === 'none') {
+    h = `<div class="card empty">Pantalla limpia: no hay nada en el overlay.<br>Elige un juego arriba para sacarlo al aire.</div>`;
+  }
+
+  if (s.game === 'adivina') {
+    const A = s.adivina, q = c.adivina[A.idx], n = q.pistas.length;
+    const pts = Math.max(1, n - Math.max(A.revealed, 1) + 1);
+    h = `<div class="card"><div class="label">Respuesta · solo la ves tú</div><div class="answer">${q.respuesta}</div></div>
+      <div class="card"><div class="label">Pistas · ${A.revealed} de ${n} en pantalla</div>
+        <ol class="clues">${q.pistas.map((p, i) => `<li class="${i < A.revealed ? 'shown' : ''}"><span>${i + 1}</span>${p}</li>`).join('')}</ol></div>
+      <div class="bar"><span class="pill">Puntaje ${A.score}</span><span class="pill">Valen ${pts} pts</span>
+        <span class="pill">Jugador ${A.idx + 1} de ${c.adivina.length}</span>
+        ${A.solved ? '<span class="pill ok">Respuesta en pantalla</span>' : ''}</div>
+      <div class="grid">${btn('primary big', '+ Mostrar pista', { type: 'a_clue' })}
+        ${btn('ok big', `✔ Acertó (+${pts})`, { type: 'a_solve' })}
+        ${btn('no', 'Mostrar respuesta sin puntos', { type: 'a_reveal' })}</div>
+      <div class="grid">${nav('a_go', A.solved ? 'primary' : '')}</div>`;
+  }
+
+  if (s.game === 'vf') {
+    const V = s.vf, q = c.vf[V.idx];
+    h = `<div class="card"><div class="label">Afirmación</div><div class="stmt">${q.texto}</div>
+        <div class="truth ${q.verdad ? 't' : 'f'}">Respuesta correcta: ${q.verdad ? 'VERDADERO' : 'FALSO'}</div></div>
+      <div class="bar"><span class="pill">Aciertos ${V.score} de ${V.answered}</span>
+        <span class="pill">${V.idx + 1} de ${c.vf.length}</span>
+        <span class="pill ${V.shown ? 'ok' : ''}">${V.shown ? 'Afirmación en pantalla' : 'Afirmación oculta'}</span></div>
+      <div class="grid">${btn('primary big', 'Mostrar afirmación', { type: 'v_show' })}
+        ${btn('ok big', '✔ Acertó', { type: 'v_mark', value: true })}
+        ${btn('no big', '✘ Falló', { type: 'v_mark', value: false })}</div>
+      <div class="grid">${nav('v_go', V.reveal ? 'primary' : '')}</div>`;
+  }
+
+  if (s.game === 'top5') {
+    const T = s.top5, q = c.top5[T.idx];
+    h = `<div class="card"><div class="label">Ranking ${T.idx + 1} de ${c.top5.length}</div><div class="stmt">${q.titulo}</div></div>
+      <div class="list">${q.items.map((it, i) => btn(T.rev[i] ? 'ok row' : 'row',
+        `<span class="n">${i + 1}</span><span>${it}</span><span class="st">${T.rev[i] ? 'En pantalla' : 'Oculto'}</span>`,
+        { type: 't_toggle', i })).join('')}</div>
+      <div class="grid">${btn('primary', 'Revelar todo', { type: 't_all' })}${nav('t_go')}</div>`;
+  }
+
+  h += `<div class="foot"><button class="ghost" onclick='send({"type":"reload_content"})'>↻ Recargar preguntas (Excel)</button>
+    <button class="ghost" onclick="resetAll()">Reiniciar puntajes y pantalla</button>
+    ${s.contentMsg ? `<div class="msg">${s.contentMsg}</div>` : ''}</div>`;
+  document.getElementById('panel').innerHTML = h;
+}
+</script>
+</body>
+</html>

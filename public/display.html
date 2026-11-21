@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FSHOW Juegos · Pantalla</title>
+<style>
+  @font-face { font-family: "Barlow Condensed"; font-weight: 700; src: url("/fonts/barlow-condensed-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Barlow Condensed"; font-weight: 800; src: url("/fonts/barlow-condensed-latin-800-normal.woff2") format("woff2"); }
+
+  :root {
+    /* Colores de FSHOW */
+    --navy: #070745; --blue: #0319d6; --blue-d: #050f84; --red: #ff2925; --green: #12a150;
+    --sk: skewX(-7deg); --k: 1.1;
+  }
+  html, body { margin: 0; background: transparent; overflow: hidden; color: #fff;
+               font-family: "Barlow Condensed", "Arial Narrow", Impact, sans-serif; font-weight: 800; }
+  #root { position: absolute; inset: 0; }
+  .wrap { position: absolute; inset: 0; }
+
+  .plate { transform: var(--sk); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .enter { animation: enter .45s cubic-bezier(.2,.8,.2,1) both; }
+  .pop   { animation: pop .4s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes enter { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  @keyframes pop   { from { opacity: 0; transform: var(--sk) translateX(var(--dx, -80px)); } to { opacity: 1; transform: var(--sk); } }
+
+  /* Encabezado arriba a la izquierda (puntos junto al título). La esquina superior derecha queda libre para el logo ESPN */
+  .hdr { position: absolute; left: 90px; top: 54px; display: flex; align-items: stretch; height: 96px; }
+  .logo { height: 96px; width: auto; margin-right: 18px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.4)); }
+  .title { display: flex; align-items: center; padding: 0 30px; background: var(--navy);
+           border-left: 10px solid var(--red); font-size: 48px; letter-spacing: 1px;
+           text-transform: uppercase; white-space: nowrap; }
+  .pts { display: flex; align-items: center; margin-left: 10px; padding: 0 28px; background: var(--red);
+         font-size: 50px; white-space: nowrap; }
+
+  /* Reloj: blanco con números rojos parpadeando en los últimos 10 s */
+  .clock { display: flex; align-items: center; justify-content: center; min-width: 170px; margin-left: 10px; padding: 0 26px;
+           background: #fff; color: var(--navy); font-size: 60px; white-space: nowrap; }
+  .clock.low { color: var(--red); animation: blink 1s steps(1, end) infinite; }
+  .clock.end { color: var(--red); animation: blink .5s steps(1, end) infinite; }
+  @keyframes blink { 50% { opacity: .45; } }
+
+  /* Ítems alrededor del invitado (todo escala con --k) */
+  .slot { position: absolute; height: calc(130px * var(--k)); display: flex; align-items: center; }
+  .row { display: flex; align-items: center; width: 100%; min-height: calc(88px * var(--k));
+         background: linear-gradient(90deg, var(--blue), var(--blue-d)); }
+  .row .n { align-self: stretch; width: calc(72px * var(--k)); flex: none; display: flex; align-items: center; justify-content: center;
+            background: var(--red); font-size: calc(50px * var(--k)); }
+  .row .t { padding: 6px 22px 8px 20px; font-size: calc(40px * var(--k)); font-weight: 700; line-height: 1.05; letter-spacing: .2px; }
+  .row.hid { background: rgba(7,7,69,.84); }
+  .row.hid .n { background: rgba(255,255,255,.2); }
+  .row.hid .t { opacity: .45; }
+
+  /* Tercio inferior (respuesta, afirmación, título del ranking) */
+  .lower { position: absolute; left: 0; right: 0; bottom: 60px; display: flex; justify-content: center; }
+  .answer { width: 1100px; padding: 2px 24px 8px; background: #fff; color: var(--navy); text-align: center;
+            border-left: 18px solid var(--red); font-size: 88px; text-transform: uppercase; }
+  .score { position: absolute; left: 90px; bottom: 64px; }
+  .score div { padding: 4px 30px; background: var(--navy); border-right: 12px solid var(--red); font-size: 40px; }
+
+  .stmt { width: 1500px; min-height: 140px; padding: 22px 44px; display: flex; align-items: center;
+          background: linear-gradient(90deg, var(--blue), var(--blue-d)); font-size: 54px; font-weight: 700; line-height: 1.1; }
+  .stmt.dim { width: 260px; min-height: 100px; justify-content: center; background: rgba(7,7,69,.84); font-size: 70px; }
+  .mid-right { position: absolute; right: 90px; top: 0; bottom: 0; display: flex; align-items: center; }
+  .verdict { padding: 6px 44px 14px; background: var(--green); font-size: 92px; letter-spacing: 2px; }
+  .verdict.f { background: var(--red); }
+
+  .sub { padding: 6px 64px 10px; background: var(--red); font-size: 58px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// Geometría del "rosco" (pantalla de 1920x1080). Ajusta RX para ensanchar o angostar el centro libre.
+// K = tamaño de los ítems (1 = pequeño, 1.2 = grande). W = ancho de cada ítem.
+// RX = distancia de los ítems al centro (más chico = más cerca del invitado). RY = altura del arco.
+const CFG = { CX: 960, CY: 548, RX: 350, RY: 380, W: 520, K: 1.1 };
+document.documentElement.style.setProperty('--k', CFG.K);
+
+const root = document.getElementById('root');
+const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
+let prev = null;
+let prevSig = null;
+ws.onmessage = e => {
+  const s = JSON.parse(e.data);
+  const { timer, ...rest } = s;
+  const sig = JSON.stringify(rest) + (timer.show ? '1' : '0');
+  if (prev && sig === prevSig) { updateClock(timer); prev = s; return; } // solo cambió el reloj
+  prevSig = sig; render(s); prev = s;
+};
+ws.onclose = () => setTimeout(() => location.reload(), 2000);
+
+const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const fmt = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+const clockTxt = t => fmt(Math.ceil(t.remaining));
+const clockCls = t => t.remaining <= 0 ? 'end' : (t.running && Math.ceil(t.remaining) <= 10 ? 'low' : '');
+const clockHtml = t => t && t.show ? `<div class="plate clock ${clockCls(t)}">${clockTxt(t)}</div>` : '';
+function updateClock(t) {
+  const el = root.querySelector('.clock');
+  if (el) { el.textContent = clockTxt(t); el.className = 'plate clock ' + clockCls(t); }
+}
+const hdr = (title, pts, t) => `<div class="hdr"><img class="logo" src="/logo.png" alt=""><div class="plate title">${title}</div>${pts ? `<div class="plate pts">${pts}</div>` : ''}${clockHtml(t)}</div>`;
+
+// Posición del ítem i de n: mitad a la izquierda y mitad a la derecha, en arco alrededor del centro
+function place(n, i) {
+  const nl = Math.ceil(n / 2), left = i < nl;
+  const count = left ? nl : n - nl, idx = left ? i : i - nl, dir = left ? -1 : 1;
+  const span = count >= 4 ? 46 : count === 3 ? 40 : count === 2 ? 24 : 0;
+  const t = count === 1 ? 0 : (idx / (count - 1)) * 2 - 1;
+  const a = t * span * Math.PI / 180;
+  const inner = CFG.CX + dir * CFG.RX * Math.cos(a);
+  return { x: dir < 0 ? inner - CFG.W : inner, y: CFG.CY + CFG.RY * Math.sin(a), dir };
+}
+function item(n, i, shown, isNew, text) {
+  const p = place(n, i);
+  return `<div class="slot" style="left:${p.x}px;top:${p.y - 65 * CFG.K}px;width:${CFG.W}px">
+    <div class="plate row${shown ? '' : ' hid'}${isNew ? ' pop' : ''}" style="--dx:${p.dir < 0 ? -80 : 80}px">
+      <div class="n">${i + 1}</div><div class="t">${shown ? esc(text) : '?'}</div></div></div>`;
+}
+
+function render(s) {
+  const h = s.game === 'adivina' ? adivina(s) : s.game === 'vf' ? vf(s) : s.game === 'top5' ? top5(s) : '';
+  const changed = !prev || prev.game !== s.game;
+  root.innerHTML = h ? `<div class="wrap ${changed ? 'enter' : ''}">${h}</div>` : '';
+}
+
+function adivina(s) {
+  const A = s.adivina, q = s.content.adivina[A.idx], n = q.pistas.length;
+  const pts = Math.max(1, n - Math.max(A.revealed, 1) + 1);
+  const P = prev && prev.game === 'adivina' && prev.adivina.idx === A.idx ? prev.adivina : null;
+  const items = q.pistas.map((p, i) => {
+    const shown = i < A.revealed;
+    return item(n, i, shown, shown && P && i >= P.revealed, p);
+  }).join('');
+  const ans = A.solved ? `<div class="lower"><div class="plate answer${P && !P.solved ? ' pop' : ''}" style="--dx:0px">${esc(q.respuesta)}</div></div>` : '';
+  return hdr('¿Quién es el jugador?', A.solved ? '' : `${pts} PTS`, s.timer) +
+    items + ans + `<div class="score"><div class="plate">Puntaje ${A.score}</div></div>`;
+}
+
+function vf(s) {
+  const V = s.vf, q = s.content.vf[V.idx];
+  const P = prev && prev.game === 'vf' && prev.vf.idx === V.idx ? prev.vf : null;
+  const stmt = V.shown
+    ? `<div class="plate stmt${P && !P.shown ? ' pop' : ''}" style="--dx:0px">${esc(q.texto)}</div>`
+    : `<div class="plate stmt dim">?</div>`;
+  const verdict = V.reveal
+    ? `<div class="mid-right"><div class="plate verdict ${q.verdad ? '' : 'f'}${P && !P.reveal ? ' pop' : ''}" style="--dx:80px">${q.verdad ? 'VERDADERO' : 'FALSO'}</div></div>` : '';
+  return hdr('Verdadero o falso', `${V.score} / ${V.answered}`, s.timer) +
+    verdict + `<div class="lower">${stmt}</div>`;
+}
+
+function top5(s) {
+  const T = s.top5, q = s.content.top5[T.idx];
+  const P = prev && prev.game === 'top5' && prev.top5.idx === T.idx ? prev.top5 : null;
+  const items = q.items.map((it, i) => item(q.items.length, i, T.rev[i], T.rev[i] && P && !P.rev[i], it)).join('');
+  return hdr('Top 5', '', s.timer) + items + `<div class="lower"><div class="plate sub">${esc(q.titulo)}</div></div>`;
+}
+</script>
+</body>
+</html>

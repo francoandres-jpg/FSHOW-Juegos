@@ -1,0 +1,17 @@
+{
+  "name": "fshow-juegos",
+  "version": "1.0.0",
+  "description": "Juegos para invitados de FSHOW (vMix): Adivina el jugador, Verdadero o falso y Top 5",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "ws": "^8.18.0",
+    "read-excel-file": "^5.8.8"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

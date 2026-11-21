@@ -12,9 +12,10 @@
     --navy: #070745; --blue: #0319d6; --blue-d: #050f84; --red: #ff2925; --green: #12a150;
     --sk: skewX(-7deg); --k: 1.1;
   }
-  html, body { margin: 0; background: transparent; overflow: hidden; color: #fff;
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; color: #fff;
                font-family: "Barlow Condensed", "Arial Narrow", Impact, sans-serif; font-weight: 800; }
-  #root { position: absolute; inset: 0; }
+  /* Lienzo fijo de 1920x1080 que se escala para caber en cualquier ventana (en vMix a 1920x1080 la escala es 1) */
+  #root { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
   .wrap { position: absolute; inset: 0; }
 
   .plate { transform: var(--sk); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
@@ -65,6 +66,19 @@
   .verdict.f { background: var(--red); }
 
   .sub { padding: 6px 64px 10px; background: var(--red); font-size: 58px; text-transform: uppercase; }
+
+  /* Con fondo de chroma: sin sombras ni transparencias (si no, quedan bordes sucios al quitar el color) */
+  body.chroma .plate { box-shadow: none; }
+  body.chroma .logo { filter: none; }
+  body.chroma .row.hid, body.chroma .stmt.dim { background: #1f1f55; }
+  body.chroma .clock.low, body.chroma .clock.end { animation: none; background: var(--red); color: #fff; }
+
+  /* Con chroma verde, el cartel VERDADERO pasa a azul para que no se borre */
+  body.bg-green .verdict:not(.f) { background: var(--blue); }
+
+  /* Solo con ?preview: fondo gris con silueta para ver el diseño en un navegador normal */
+  body.preview { background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxNjAgOTAnIHByZXNlcnZlQXNwZWN0UmF0aW89J3hNaWRZTWF4IG1lZXQnPjxjaXJjbGUgY3g9JzgwJyBjeT0nMzMnIHI9JzEzJyBmaWxsPSd3aGl0ZScgZmlsbC1vcGFjaXR5PScuMTYnLz48cGF0aCBkPSdNNDIgOTBjMC0yMSAxNy0zMSAzOC0zMXMzOCAxMCAzOCAzMXonIGZpbGw9J3doaXRlJyBmaWxsLW9wYWNpdHk9Jy4xNicvPjwvc3ZnPg==') center/contain no-repeat,
+                 radial-gradient(ellipse at 50% 40%, #3b4468 0%, #151a2e 80%); }
 </style>
 </head>
 <body>
@@ -73,10 +87,25 @@
 // Geometría del "rosco" (pantalla de 1920x1080). Ajusta RX para ensanchar o angostar el centro libre.
 // K = tamaño de los ítems (1 = pequeño, 1.2 = grande). W = ancho de cada ítem.
 // RX = distancia de los ítems al centro (más chico = más cerca del invitado). RY = altura del arco.
-const CFG = { CX: 960, CY: 548, RX: 350, RY: 380, W: 520, K: 1.1 };
+const CFG = { CX: 960, CY: 548, RX: 440, RY: 380, W: 430, K: 1.05 };
 document.documentElement.style.setProperty('--k', CFG.K);
 
 const root = document.getElementById('root');
+const PREVIEW = new URLSearchParams(location.search).has('preview');
+if (PREVIEW) document.body.classList.add('preview');
+// Fondo para chroma: none = transparente, green = verde croma, magenta
+function applyBg(bg) {
+  const color = bg === 'green' ? '#00b140' : bg === 'magenta' ? '#ff00ff' : '';
+  document.documentElement.style.background = color;
+  document.body.classList.toggle('bg-green', bg === 'green');
+  document.body.classList.toggle('chroma', !!color);
+  document.body.classList.toggle('preview', PREVIEW && !color);
+}
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  root.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
 const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
 let prev = null;
 let prevSig = null;
@@ -118,6 +147,7 @@ function item(n, i, shown, isNew, text) {
 }
 
 function render(s) {
+  applyBg(s.bg);
   const h = s.game === 'adivina' ? adivina(s) : s.game === 'vf' ? vf(s) : s.game === 'top5' ? top5(s) : '';
   const changed = !prev || prev.game !== s.game;
   root.innerHTML = h ? `<div class="wrap ${changed ? 'enter' : ''}">${h}</div>` : '';

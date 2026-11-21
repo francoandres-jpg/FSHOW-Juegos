@@ -62,9 +62,9 @@ async function readExcel(input) {
 const sheetId = v => { const m = String(v).match(/\/d\/([a-zA-Z0-9_-]+)/); return m ? m[1] : String(v).trim(); };
 
 async function fetchSheet(v) {
-  const url = `${SHEETS_BASE}/spreadsheets/d/${sheetId(v)}/export?format=xlsx`;
+  const url = `${SHEETS_BASE}/spreadsheets/d/${sheetId(v)}/export?format=xlsx&_=${Date.now()}`;
   let res;
-  try { res = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(20000) }); }
+  try { res = await fetch(url, { redirect: 'follow', headers: { 'Cache-Control': 'no-cache' }, signal: AbortSignal.timeout(20000) }); }
   catch (e) { throw new Error('no se pudo conectar con Google Sheets (' + e.message + ')'); }
   const buf = Buffer.from(await res.arrayBuffer());
   const isZip = buf.length > 4 && buf[0] === 0x50 && buf[1] === 0x4b; // los .xlsx empiezan con "PK"
@@ -90,6 +90,7 @@ let content = null;
 const DEFAULT_TIME = 60; // segundos (también se cambia desde el panel de control)
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const wrap = (i, n, d) => (i + d + n) % n;
+const hora = () => new Date().toLocaleTimeString('es-CL', { timeZone: 'America/Santiago', hour12: false });
 const hidden = idx => content.top5[idx].items.map(() => false);
 
 function fresh(total = DEFAULT_TIME) {
@@ -97,6 +98,7 @@ function fresh(total = DEFAULT_TIME) {
     content,
     contentMsg: '',
     game: 'none', // none | adivina | vf | top5
+    bg: 'none',   // none (transparente) | green | magenta (para chroma)
     adivina: { idx: 0, revealed: 0, solved: false, score: 0 },
     vf: { idx: 0, shown: false, reveal: false, score: 0, answered: 0 },
     top5: { idx: 0, rev: hidden(0) },
@@ -166,7 +168,7 @@ wss.on('connection', (ws, req) => {
         state.top5.idx = Math.min(state.top5.idx, content.top5.length - 1);
         state.top5.rev = hidden(state.top5.idx);
         state.adivina.revealed = Math.min(state.adivina.revealed, content.adivina[state.adivina.idx].pistas.length);
-        state.contentMsg = `✔ Preguntas recargadas (${r.source}): ${content.adivina.length} jugadores, ${content.vf.length} afirmaciones, ${content.top5.length} rankings`;
+        state.contentMsg = `✔ ${hora()} · Recargado desde ${r.source}: ${content.adivina.length} jugadores (el primero: ${content.adivina[0].respuesta}), ${content.vf.length} afirmaciones, ${content.top5.length} rankings`;
       } catch (e) {
         state.contentMsg = '✘ No se pudieron leer las preguntas: ' + e.message;
       }
@@ -230,7 +232,9 @@ wss.on('connection', (ws, req) => {
       case 'timer_add': R.remaining = clamp(R.remaining + Number(m.value || 0), 0, 5999); break;
       case 'timer_show': R.show = !!m.value; break;
 
-      case 'reset': state = fresh(state.timer.total); break;
+      case 'bg': if (['none', 'green', 'magenta'].includes(m.value)) state.bg = m.value; break;
+
+      case 'reset': { const bg = state.bg; state = fresh(state.timer.total); state.bg = bg; break; }
     }
     broadcast();
   });
@@ -253,6 +257,6 @@ wss.on('connection', (ws, req) => {
   content = r.c;
   console.log(`Preguntas cargadas desde ${r.source}: ${content.adivina.length} jugadores, ${content.vf.length} afirmaciones, ${content.top5.length} rankings`);
   state = fresh();
-  state.contentMsg = startMsg;
+  state.contentMsg = startMsg || `Preguntas cargadas desde ${r.source} al iniciar. Si editaste el Sheet, presiona "Recargar preguntas".`;
   server.listen(PORT, () => console.log(`FSHOW Juegos listo en http://localhost:${PORT}` + (CONTROL_KEY ? ' (control protegido con clave)' : '')));
 })();

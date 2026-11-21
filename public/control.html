@@ -64,6 +64,9 @@
   .chk { display:flex; align-items:center; gap:10px; font-size:15px; color:var(--mut); margin-top:6px; cursor:pointer; }
   .chk input { width:20px; height:20px; }
   .msg { font-size:14px; margin-top:10px; color:var(--mut); }
+  .btn.sw-green { background:#00b140; }
+  .btn.sw-mag { background:#ff00ff; color:#111; }
+  .btn.sel { outline:3px solid #fff; outline-offset:2px; }
   .off { display:none; position:fixed; left:0; right:0; bottom:0; background:var(--red); padding:12px; text-align:center; font-weight:700; }
 </style>
 </head>
@@ -74,6 +77,15 @@
     <div class="pv-label"><span class="live">● Vista previa</span><span>Así se ve en vMix</span></div>
     <div class="pv" id="pv"><iframe id="pvf" src="/display.html" scrolling="no" tabindex="-1"></iframe></div>
     <p class="hint">El fondo gris y la silueta solo simulan tu cámara. El centro queda libre para el invitado.</p>
+    <div class="card" id="bgbox" style="margin-top:14px">
+      <div class="label">Fondo de la pantalla (para chroma)</div>
+      <div class="grid">
+        <button class="btn" id="bg-none" onclick='send({"type":"bg","value":"none"})'>Transparente</button>
+        <button class="btn sw-green" id="bg-green" onclick='send({"type":"bg","value":"green"})'>Verde</button>
+        <button class="btn sw-mag" id="bg-magenta" onclick='send({"type":"bg","value":"magenta"})'>Magenta</button>
+      </div>
+      <div class="label" style="margin:6px 0 0">Con fondo verde, el cartel VERDADERO se pone azul para que el chroma no lo borre.</div>
+    </div>
     <div class="card" id="timerbox" style="margin-top:14px">
       <div class="label">Reloj · cuenta regresiva</div>
       <div class="tbig"><span id="tclock">1:00</span><span class="pill" id="tstate">Detenido</span></div>
@@ -133,6 +145,12 @@ function applyTime() {
   send({ type: 'timer_set', value: v });
 }
 function preset(v) { $('tinput').value = fmt(v); send({ type: 'timer_set', value: v }); }
+function updateBg(s) {
+  for (const k of ['none', 'green', 'magenta']) {
+    const b = $('bg-' + k); if (!b) continue;
+    b.classList.toggle('sel', (s.bg || 'none') === k);
+  }
+}
 function updateTimer(t) {
   $('tclock').textContent = fmt(Math.ceil(t.remaining));
   const st = $('tstate');
@@ -145,7 +163,7 @@ function updateTimer(t) {
 ws.onmessage = e => {
   const s = JSON.parse(e.data);
   const { timer, ...rest } = s;
-  updateTimer(timer);
+  updateTimer(timer); updateBg(s);
   const sig = JSON.stringify(rest);
   if (sig === prevSig) return; // solo cambió el reloj: no se redibuja el panel
   prevSig = sig; draw(s);
@@ -162,7 +180,8 @@ function draw(s) {
   document.getElementById('tabs').innerHTML = Object.keys(names).map(g =>
     `<button class="tab ${s.game === g ? 'on' : ''}" onclick='send({"type":"game","value":"${g}"})'>${names[g]}</button>`).join('');
   const c = s.content;
-  let h = s.readOnly ? `<div class="card" style="background:var(--red);border-color:var(--red)"><b>Solo lectura.</b> La clave es incorrecta o falta. Abre esta página como <code>/control.html?key=TU_CLAVE</code>.</div>` : '';
+  const banner = s.readOnly ? `<div class="card" style="background:var(--red);border-color:var(--red);font-size:18px"><b>SOLO LECTURA: los botones no hacen nada.</b><br>La clave de la dirección no coincide con CONTROL_KEY del servidor (o falta). Abre esta página como <code>/control.html?key=LA_CLAVE_EXACTA</code>.</div>` : '';
+  let h = '';
 
   if (s.game === 'none') {
     h = `<div class="card empty">Pantalla limpia: no hay nada en el overlay.<br>Elige un juego arriba para sacarlo al aire.</div>`;
@@ -205,10 +224,10 @@ function draw(s) {
       <div class="grid">${btn('primary', 'Revelar todo', { type: 't_all' })}${nav('t_go')}</div>`;
   }
 
-  h += `<div class="foot"><button class="ghost" onclick='send({"type":"reload_content"})'>↻ Recargar preguntas (Excel)</button>
+  h += `<div class="foot"><button class="ghost" onclick='send({"type":"reload_content"})'>↻ Recargar preguntas</button>
     <button class="ghost" onclick="resetAll()">Reiniciar puntajes y pantalla</button>
     ${s.contentMsg ? `<div class="msg">${s.contentMsg}</div>` : ''}</div>`;
-  document.getElementById('panel').innerHTML = h;
+  document.getElementById('panel').innerHTML = banner + h;
 }
 </script>
 </body>
